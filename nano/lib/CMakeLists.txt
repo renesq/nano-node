@@ -42,7 +42,9 @@ add_library (nano_lib
 	utility.hpp
 	utility.cpp
 	work.hpp
-	work.cpp)
+	work.cpp
+	convert.hpp
+	convert.cpp)
 
 target_link_libraries (nano_lib
 	ed25519
