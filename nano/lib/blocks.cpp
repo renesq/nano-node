@@ -3,6 +3,7 @@
 #include <nano/lib/memory.hpp>
 #include <nano/lib/numbers.hpp>
 #include <nano/lib/utility.hpp>
+#include <nano/lib/convert.hpp>
 
 #include <boost/endian/conversion.hpp>
 #include <boost/pool/pool_alloc.hpp>
@@ -1093,6 +1094,7 @@ void nano::state_block::serialize_json (boost::property_tree::ptree & tree) cons
 	tree.put ("previous", hashables.previous.to_string ());
 	tree.put ("representative", representative ().to_account ());
 	tree.put ("balance", hashables.balance.to_string_dec ());
+	tree.put ("balance_decimal", convert_raw_to_dec (hashables.balance.to_string_dec ()));
 	tree.put ("link", hashables.link.to_string ());
 	tree.put ("link_as_account", hashables.link.to_account ());
 	std::string signature_l;
