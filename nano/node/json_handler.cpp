@@ -917,8 +917,10 @@ void nano::json_handler::block_info ()
 			response_l.put ("block_account", account.to_account ());
 			auto amount (node.ledger.amount (transaction, hash));
 			response_l.put ("amount", amount.convert_to<std::string> ());
+			response_l.put ("amount_decimal", convert_raw_to_dec (amount.convert_to<std::string> ()));
 			auto balance (node.ledger.balance (transaction, hash));
 			response_l.put ("balance", balance.convert_to<std::string> ());
+			response_l.put ("balance_decimal", convert_raw_to_dec (balance.convert_to<std::string> ()));
 			response_l.put ("height", std::to_string (sideband.height));
 			response_l.put ("local_timestamp", std::to_string (sideband.timestamp));
 			auto confirmed (node.block_confirmed_or_being_confirmed (transaction, hash));
