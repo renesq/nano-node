@@ -1,6 +1,7 @@
 #include <nano/lib/config.hpp>
 #include <nano/lib/json_error_response.hpp>
 #include <nano/lib/timer.hpp>
+#include <nano/lib/convert.hpp>
 #include <nano/node/bootstrap/bootstrap_lazy.hpp>
 #include <nano/node/common.hpp>
 #include <nano/node/election.hpp>
@@ -120,6 +121,10 @@ void nano::json_handler::process_request (bool unsafe_a)
 			else if (action == "password_valid")
 			{
 				password_valid ();
+			}
+			else if (action == "raw_to_dec")
+			{
+				raw_to_dec ();
 			}
 			else if (action == "wallet_locked")
 			{
@@ -509,6 +514,8 @@ void nano::json_handler::account_balance ()
 		auto balance (node.balance_pending (account));
 		response_l.put ("balance", balance.first.convert_to<std::string> ());
 		response_l.put ("pending", balance.second.convert_to<std::string> ());
+		response_l.put ("balance_decimal", convert_raw_to_dec (balance.first.convert_to<std::string> ()));
+		response_l.put ("pending_decimal", convert_raw_to_dec (balance.second.convert_to<std::string> ()));
 	}
 	response_errors ();
 }
@@ -608,6 +615,7 @@ void nano::json_handler::account_info ()
 			std::string balance;
 			nano::uint128_union (info.balance).encode_dec (balance);
 			response_l.put ("balance", balance);
+			response_l.put ("balance_decimal", convert_raw_to_dec (balance));
 			response_l.put ("modified_timestamp", std::to_string (info.modified));
 			response_l.put ("block_count", std::to_string (info.block_count));
 			response_l.put ("account_version", epoch_as_string (info.epoch ()));
@@ -621,11 +629,13 @@ void nano::json_handler::account_info ()
 			{
 				auto account_weight (node.ledger.weight (account));
 				response_l.put ("weight", account_weight.convert_to<std::string> ());
+				response_l.put ("weight_decimal", convert_raw_to_dec (account_weight.convert_to<std::string> ()));
 			}
 			if (pending)
 			{
 				auto account_pending (node.ledger.account_pending (transaction, account));
 				response_l.put ("pending", account_pending.convert_to<std::string> ());
+				response_l.put ("pending_decimal", convert_raw_to_dec (account_pending.convert_to<std::string> ()));
 			}
 		}
 	}
@@ -807,6 +817,7 @@ void nano::json_handler::account_weight ()
 	{
 		auto balance (node.weight (account));
 		response_l.put ("weight", balance.convert_to<std::string> ());
+		response_l.put ("weight_decimal", convert_raw_to_dec (balance.convert_to<std::string> ()));
 	}
 	response_errors ();
 }
@@ -823,6 +834,8 @@ void nano::json_handler::accounts_balances ()
 			auto balance (node.balance_pending (account));
 			entry.put ("balance", balance.first.convert_to<std::string> ());
 			entry.put ("pending", balance.second.convert_to<std::string> ());
+			entry.put ("balance_decimal", convert_raw_to_dec (balance.first.convert_to<std::string> ()));
+			entry.put ("pending_decimal", convert_raw_to_dec (balance.second.convert_to<std::string> ()));
 			balances.push_back (std::make_pair (account.to_account (), entry));
 		}
 	}
@@ -912,6 +925,7 @@ void nano::json_handler::accounts_pending ()
 							{
 								boost::property_tree::ptree pending_tree;
 								pending_tree.put ("amount", info.amount.number ().convert_to<std::string> ());
+								pending_tree.put ("amount_decimal", convert_raw_to_dec (info.amount.number ().convert_to<std::string> ()));
 								pending_tree.put ("source", info.source.to_account ());
 								peers_l.add_child (key.hash.to_string (), pending_tree);
 							}
@@ -992,8 +1006,10 @@ void nano::json_handler::block_info ()
 			response_l.put ("block_account", account.to_account ());
 			auto amount (node.ledger.amount (transaction, hash));
 			response_l.put ("amount", amount.convert_to<std::string> ());
+			response_l.put ("amount_decimal", convert_raw_to_dec (amount.convert_to<std::string> ()));
 			auto balance (node.ledger.balance (transaction, hash));
 			response_l.put ("balance", balance.convert_to<std::string> ());
+			response_l.put ("balance_decimal", convert_raw_to_dec (balance.convert_to<std::string> ()));
 			response_l.put ("height", std::to_string (block->sideband ().height));
 			response_l.put ("local_timestamp", std::to_string (block->sideband ().timestamp));
 			auto confirmed (node.ledger.block_confirmed (transaction, hash));
@@ -1142,8 +1158,10 @@ void nano::json_handler::blocks_info ()
 					entry.put ("block_account", account.to_account ());
 					auto amount (node.ledger.amount (transaction, hash));
 					entry.put ("amount", amount.convert_to<std::string> ());
+					entry.put ("amount_decimal", convert_raw_to_dec (amount.convert_to<std::string> ()));
 					auto balance (node.ledger.balance (transaction, hash));
 					entry.put ("balance", balance.convert_to<std::string> ());
+					entry.put ("balance_decimal", convert_raw_to_dec (balance.convert_to<std::string> ()));
 					entry.put ("height", std::to_string (block->sideband ().height));
 					entry.put ("local_timestamp", std::to_string (block->sideband ().timestamp));
 					auto confirmed (node.ledger.block_confirmed (transaction, hash));
@@ -1932,11 +1950,16 @@ void nano::json_handler::confirmation_info ()
 void nano::json_handler::confirmation_quorum ()
 {
 	response_l.put ("quorum_delta", node.delta ().convert_to<std::string> ());
+	response_l.put ("quorum_delta_decimal", convert_raw_to_dec (node.delta ().convert_to<std::string> ()));
 	response_l.put ("online_weight_quorum_percent", std::to_string (node.config.online_weight_quorum));
 	response_l.put ("online_weight_minimum", node.config.online_weight_minimum.to_string_dec ());
+	response_l.put ("online_weight_minimum_decimal", convert_raw_to_dec (node.config.online_weight_minimum.to_string_dec ()));
 	response_l.put ("online_stake_total", node.online_reps.online_stake ().convert_to<std::string> ());
+	response_l.put ("online_stake_total_decimal", convert_raw_to_dec (node.online_reps.online_stake ().convert_to<std::string> ()));
 	response_l.put ("peers_stake_total", node.rep_crawler.total_weight ().convert_to<std::string> ());
+	response_l.put ("peers_stake_total_decimal", convert_raw_to_dec (node.rep_crawler.total_weight ().convert_to<std::string> ()));
 	response_l.put ("peers_stake_required", std::max (node.config.online_weight_minimum.number (), node.delta ()).convert_to<std::string> ());
+	response_l.put ("peers_stake_required_decimal", convert_raw_to_dec (std::max (node.config.online_weight_minimum.number (), node.delta ()).convert_to<std::string> ()));
 	if (request.get<bool> ("peer_details", false))
 	{
 		boost::property_tree::ptree peers;
@@ -1946,6 +1969,7 @@ void nano::json_handler::confirmation_quorum ()
 			peer_node.put ("account", peer.account.to_account ());
 			peer_node.put ("ip", peer.channel->to_string ());
 			peer_node.put ("weight", peer.weight.to_string_dec ());
+			peer_node.put ("weight_decimal", convert_raw_to_dec (peer.weight.to_string_dec ()));
 			peers.push_back (std::make_pair ("", peer_node));
 		}
 		response_l.add_child ("peers", peers);
@@ -2181,10 +2205,12 @@ public:
 		tree.put ("account", account);
 		auto amount (handler.node.ledger.amount (transaction, hash).convert_to<std::string> ());
 		tree.put ("amount", amount);
+		tree.put ("amount_decimal", convert_raw_to_dec (amount));
 		if (raw)
 		{
 			tree.put ("destination", account);
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("balance_decimal", convert_raw_to_dec (block_a.hashables.balance.to_string_dec ()));
 			tree.put ("previous", block_a.hashables.previous.to_string ());
 		}
 	}
@@ -2195,6 +2221,7 @@ public:
 		tree.put ("account", account);
 		auto amount (handler.node.ledger.amount (transaction, hash).convert_to<std::string> ());
 		tree.put ("amount", amount);
+		tree.put ("amount_decimal", convert_raw_to_dec (amount));
 		if (raw)
 		{
 			tree.put ("source", block_a.hashables.source.to_string ());
@@ -2219,11 +2246,13 @@ public:
 		{
 			tree.put ("account", handler.node.ledger.account (transaction, block_a.hashables.source).to_account ());
 			tree.put ("amount", handler.node.ledger.amount (transaction, hash).convert_to<std::string> ());
+			tree.put ("amount_decimal", convert_raw_to_dec (handler.node.ledger.amount (transaction, hash).convert_to<std::string> ())); 
 		}
 		else
 		{
 			tree.put ("account", network_params.ledger.genesis_account.to_account ());
 			tree.put ("amount", network_params.ledger.genesis_amount.convert_to<std::string> ());
+			tree.put ("amount_decimal", convert_raw_to_dec (network_params.ledger.genesis_amount.convert_to<std::string> ())); 
 		}
 	}
 	void change_block (nano::change_block const & block_a)
@@ -2243,6 +2272,7 @@ public:
 			tree.put ("representative", block_a.hashables.representative.to_account ());
 			tree.put ("link", block_a.hashables.link.to_string ());
 			tree.put ("balance", block_a.hashables.balance.to_string_dec ());
+			tree.put ("balance_decimal", convert_raw_to_dec (block_a.hashables.balance.to_string_dec ())); 
 			tree.put ("previous", block_a.hashables.previous.to_string ());
 		}
 		auto balance (block_a.hashables.balance.number ());
@@ -2264,6 +2294,7 @@ public:
 			}
 			tree.put ("account", block_a.hashables.link.to_account ());
 			tree.put ("amount", (previous_balance - balance).convert_to<std::string> ());
+			tree.put ("amount_decimal", convert_raw_to_dec ((previous_balance - balance).convert_to<std::string> ())); 
 		}
 		else
 		{
@@ -2300,6 +2331,7 @@ public:
 				}
 				tree.put ("account", account.to_account ());
 				tree.put ("amount", (balance - previous_balance).convert_to<std::string> ());
+				tree.put ("amount_decimal", convert_raw_to_dec ((balance - previous_balance).convert_to<std::string> ())); 
 			}
 		}
 	}
@@ -2522,6 +2554,7 @@ void nano::json_handler::ledger ()
 							continue;
 						}
 						response_a.put ("pending", account_pending.convert_to<std::string> ());
+						response_a.put ("pending_decimal", convert_raw_to_dec (account_pending.convert_to<std::string> ()));
 					}
 					response_a.put ("frontier", info.head.to_string ());
 					response_a.put ("open_block", info.open_block.to_string ());
@@ -2529,6 +2562,7 @@ void nano::json_handler::ledger ()
 					std::string balance;
 					nano::uint128_union (info.balance).encode_dec (balance);
 					response_a.put ("balance", balance);
+					response_a.put ("balance_decimal", convert_raw_to_dec (balance));
 					response_a.put ("modified_timestamp", std::to_string (info.modified));
 					response_a.put ("block_count", std::to_string (info.block_count));
 					if (representative)
@@ -2539,6 +2573,7 @@ void nano::json_handler::ledger ()
 					{
 						auto account_weight (node.ledger.weight (account));
 						response_a.put ("weight", account_weight.convert_to<std::string> ());
+						response_a.put ("weight_decimal", convert_raw_to_dec (account_weight.convert_to<std::string> ()));
 					}
 					accounts.push_back (std::make_pair (account.to_account (), response_a));
 				}
@@ -2581,6 +2616,7 @@ void nano::json_handler::ledger ()
 					std::string balance;
 					(i->first).encode_dec (balance);
 					response_a.put ("balance", balance);
+					response_a.put ("balance_decimal", convert_raw_to_dec (balance));
 					response_a.put ("modified_timestamp", std::to_string (info.modified));
 					response_a.put ("block_count", std::to_string (info.block_count));
 					if (representative)
@@ -2591,6 +2627,7 @@ void nano::json_handler::ledger ()
 					{
 						auto account_weight (node.ledger.weight (account));
 						response_a.put ("weight", account_weight.convert_to<std::string> ());
+						response_a.put ("weight_decimal", convert_raw_to_dec (account_weight.convert_to<std::string> ()));
 					}
 					accounts.push_back (std::make_pair (account.to_account (), response_a));
 				}
@@ -2628,6 +2665,15 @@ void nano::json_handler::mnano_to_raw (nano::uint128_t ratio)
 		}
 	}
 	response_errors ();
+}
+
+void nano::json_handler::raw_to_dec () {
+		auto amount (amount_impl ());
+		if (!ec)
+		{
+			response_l.put ("amount_decimal", convert_raw_to_dec (amount.number ().convert_to<std::string> ()));
+		}
+		response_errors ();
 }
 
 /*
@@ -2784,6 +2830,7 @@ void nano::json_handler::pending ()
 						{
 							boost::property_tree::ptree pending_tree;
 							pending_tree.put ("amount", info.amount.number ().convert_to<std::string> ());
+							pending_tree.put ("amount_decimal", convert_raw_to_dec (info.amount.number ().convert_to<std::string>()));
 							if (source)
 							{
 								pending_tree.put ("source", info.source.to_account ());
@@ -3314,6 +3361,51 @@ void nano::json_handler::representatives ()
 	response_errors ();
 }
 
+void nano::json_handler::representatives_decimal ()
+{
+	auto count (count_optional_impl ());
+	if (!ec)
+	{
+		const bool sorting = request.get<bool> ("sorting", false);
+		boost::property_tree::ptree representatives;
+		auto rep_amounts = node.ledger.cache.rep_weights.get_rep_amounts ();
+		if (!sorting) // Simple
+		{
+			std::map<nano::account, nano::uint128_t> ordered (rep_amounts.begin (), rep_amounts.end ());
+			for (auto & rep_amount : rep_amounts)
+			{
+				auto const & account (rep_amount.first);
+				auto const & amount (rep_amount.second);
+				representatives.put (account.to_account (), convert_raw_to_dec (amount.convert_to<std::string> ()));
+
+				if (representatives.size () > count)
+				{
+					break;
+				}
+			}
+		}
+		else // Sorting
+		{
+			std::vector<std::pair<nano::uint128_t, std::string>> representation;
+
+			for (auto & rep_amount : rep_amounts)
+			{
+				auto const & account (rep_amount.first);
+				auto const & amount (rep_amount.second);
+				representation.emplace_back (amount, account.to_account ());
+			}
+			std::sort (representation.begin (), representation.end ());
+			std::reverse (representation.begin (), representation.end ());
+			for (auto i (representation.begin ()), n (representation.end ()); i != n && representatives.size () < count; ++i)
+			{
+				representatives.put (i->second, convert_raw_to_dec((i->first).convert_to<std::string> ()));
+			}
+		}
+		response_l.add_child ("representatives", representatives);
+	}
+	response_errors ();
+}
+
 void nano::json_handler::representatives_online ()
 {
 	const auto accounts_node = request.get_child_optional ("accounts");
@@ -3361,6 +3453,7 @@ void nano::json_handler::representatives_online ()
 				boost::property_tree::ptree weight_node;
 				auto account_weight (node.ledger.weight (i));
 				weight_node.put ("weight", account_weight.convert_to<std::string> ());
+				weight_node.put ("weight_decimal", convert_raw_to_dec (account_weight.convert_to<std::string> ()));
 				representatives.add_child (i.to_account (), weight_node);
 			}
 			else
@@ -4202,7 +4295,9 @@ void nano::json_handler::wallet_info ()
 		}
 		uint32_t deterministic_index (wallet->store.deterministic_index_get (transaction));
 		response_l.put ("balance", balance.convert_to<std::string> ());
+		response_l.put ("balance_decimal", convert_raw_to_dec (balance.convert_to<std::string> ()));
 		response_l.put ("pending", pending.convert_to<std::string> ());
+		response_l.put ("pending_decimal", convert_raw_to_dec (pending.convert_to<std::string> ()));
 		response_l.put ("accounts_count", std::to_string (count));
 		response_l.put ("deterministic_count", std::to_string (deterministic_count));
 		response_l.put ("adhoc_count", std::to_string (adhoc_count));
@@ -4230,6 +4325,8 @@ void nano::json_handler::wallet_balances ()
 				nano::uint128_t pending = node.ledger.account_pending (block_transaction, account);
 				entry.put ("balance", balance.convert_to<std::string> ());
 				entry.put ("pending", pending.convert_to<std::string> ());
+				entry.put ("balance_decimal", convert_raw_to_dec (balance.convert_to<std::string> ()));
+				entry.put ("pending_decimal", convert_raw_to_dec (pending.convert_to<std::string> ()));
 				balances.push_back (std::make_pair (account.to_account (), entry));
 			}
 		}
@@ -4489,6 +4586,7 @@ void nano::json_handler::wallet_ledger ()
 					std::string balance;
 					nano::uint128_union (info.balance).encode_dec (balance);
 					entry.put ("balance", balance);
+					entry.put ("balance_decimal", convert_raw_to_dec (balance));
 					entry.put ("modified_timestamp", std::to_string (info.modified));
 					entry.put ("block_count", std::to_string (info.block_count));
 					if (representative)
@@ -4499,11 +4597,13 @@ void nano::json_handler::wallet_ledger ()
 					{
 						auto account_weight (node.ledger.weight (account));
 						entry.put ("weight", account_weight.convert_to<std::string> ());
+						entry.put ("weight_decimal", convert_raw_to_dec (account_weight.convert_to<std::string> ()));
 					}
 					if (pending)
 					{
 						auto account_pending (node.ledger.account_pending (block_transaction, account));
 						entry.put ("pending", account_pending.convert_to<std::string> ());
+						entry.put ("pending_decimal", convert_raw_to_dec (account_pending.convert_to<std::string> ()));
 					}
 					accounts.push_back (std::make_pair (account.to_account (), entry));
 				}
@@ -5084,6 +5184,7 @@ ipc_json_handler_no_arg_func_map create_ipc_json_handler_no_arg_func_map ()
 	no_arg_funcs.emplace ("pending", &nano::json_handler::pending);
 	no_arg_funcs.emplace ("pending_exists", &nano::json_handler::pending_exists);
 	no_arg_funcs.emplace ("process", &nano::json_handler::process);
+	no_arg_funcs.emplace ("raw_to_dec", &nano::json_handler::raw_to_dec);
 	no_arg_funcs.emplace ("receive", &nano::json_handler::receive);
 	no_arg_funcs.emplace ("receive_minimum", &nano::json_handler::receive_minimum);
 	no_arg_funcs.emplace ("receive_minimum_set", &nano::json_handler::receive_minimum_set);

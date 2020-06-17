@@ -89,10 +89,12 @@ public:
 	void pending ();
 	void pending_exists ();
 	void process ();
+	void raw_to_dec ();
 	void receive ();
 	void receive_minimum ();
 	void receive_minimum_set ();
 	void representatives ();
+	void representatives_decimal ();
 	void representatives_online ();
 	void republish ();
 	void search_pending ();

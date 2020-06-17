@@ -3,6 +3,7 @@
 #include <nano/lib/threading.hpp>
 #include <nano/lib/tomlconfig.hpp>
 #include <nano/lib/utility.hpp>
+#include <nano/lib/convert.hpp>
 #include <nano/node/common.hpp>
 #include <nano/node/daemonconfig.hpp>
 #include <nano/node/node.hpp>
@@ -168,6 +169,7 @@ node_seq (seq)
 						block_a->serialize_json (block_text);
 						event.add ("block", block_text);
 						event.add ("amount", amount_a.to_string_dec ());
+						event.add ("amount_decimal", convert_raw_to_dec (amount_a.to_string_dec ()));
 						if (is_state_send_a)
 						{
 							event.add ("is_send", is_state_send_a);

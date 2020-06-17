@@ -23,6 +23,8 @@ add_library (nano_lib
 	config.hpp
 	config.cpp
 	configbase.hpp
+	convert.hpp
+	convert.cpp
 	diagnosticsconfig.hpp
 	diagnosticsconfig.cpp
 	epoch.hpp
