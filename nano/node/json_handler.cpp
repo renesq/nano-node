@@ -2045,6 +2045,29 @@ void nano::json_handler::delegators ()
 	response_errors ();
 }
 
+void nano::json_handler::delegators_decimal ()
+{
+	auto account (account_impl ());
+	if (!ec)
+	{
+		boost::property_tree::ptree delegators;
+		auto transaction (node.store.tx_begin_read ());
+		for (auto i (node.store.latest_begin (transaction)), n (node.store.latest_end ()); i != n; ++i)
+		{
+			nano::account_info const & info (i->second);
+			if (info.representative == account)
+			{
+				std::string balance;
+				nano::uint128_union (info.balance).encode_dec (balance);
+				nano::account const & account (i->first);
+				delegators.put (account.to_account (), convert_raw_to_dec (balance));
+			}
+		}
+		response_l.add_child ("delegators", delegators);
+	}
+	response_errors ();
+}
+
 void nano::json_handler::delegators_count ()
 {
 	auto account (account_impl ());

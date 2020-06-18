@@ -67,6 +67,7 @@ public:
 	void database_txn_tracker ();
 	void delegators ();
 	void delegators_count ();
+	void delegators_decimal ();
 	void deterministic_key ();
 	void epoch_upgrade ();
 	void frontiers ();
