@@ -1861,6 +1861,7 @@ void nano::json_handler::confirmation_history ()
 				election.put ("duration", i->election_duration.count ());
 				election.put ("time", i->election_end.count ());
 				election.put ("tally", i->tally.to_string_dec ());
+				election.put ("tally_decimal", convert_raw_to_dec (i->tally.to_string_dec ()));
 				election.put ("blocks", std::to_string (i->block_count));
 				election.put ("voters", std::to_string (i->voter_count));
 				election.put ("request_count", std::to_string (i->confirmation_request_count));
@@ -1903,6 +1904,7 @@ void nano::json_handler::confirmation_info ()
 				boost::property_tree::ptree entry;
 				auto const & tally (i->first);
 				entry.put ("tally", tally.convert_to<std::string> ());
+				entry.put ("tally_decimal", convert_raw_to_dec (tally.convert_to<std::string> ()));
 				total += tally;
 				if (contents)
 				{
@@ -1941,6 +1943,7 @@ void nano::json_handler::confirmation_info ()
 				blocks.add_child ((i->second->hash ()).to_string (), entry);
 			}
 			response_l.put ("total_tally", total.convert_to<std::string> ());
+			response_l.put ("total_tally_decimal", convert_raw_to_dec (total.convert_to<std::string> ()));
 			response_l.add_child ("blocks", blocks);
 		}
 		else
