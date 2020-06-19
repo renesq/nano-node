@@ -126,6 +126,14 @@ void nano::json_handler::process_request (bool unsafe_a)
 			{
 				raw_to_dec ();
 			}
+			else if (action == "representatives_decimal")
+			{
+				representatives_decimal ();
+			}
+			else if (action == "delegators_decimal")
+			{
+				delegators_decimal ();
+			}
 			else if (action == "wallet_locked")
 			{
 				password_valid (true);
